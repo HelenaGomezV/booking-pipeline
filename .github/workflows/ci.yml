@@ -1,0 +1,87 @@
+name: Booking Pipeline CI
+
+on:
+  push:
+    branches: [develop, main]
+  pull_request:
+    branches: [main]
+
+jobs:
+  lint:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: '3.11'
+      - run: pip install flake8 black
+      - run: flake8 scripts/ tests/ dags/ --max-line-length=120 --ignore=E501,W503
+      - run: black --check scripts/ tests/ dags/ --line-length=120
+
+  unit-tests:
+    runs-on: ubuntu-latest
+    needs: lint
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: '3.11'
+      - run: pip install pytest psycopg2-binary pandas
+      - run: python -m pytest tests/ -v --tb=short
+
+  dbt-validate:
+    runs-on: ubuntu-latest
+    needs: lint
+    services:
+      postgres:
+        image: postgres:15
+        env:
+          POSTGRES_USER: booking_user
+          POSTGRES_PASSWORD: booking_pass
+          POSTGRES_DB: booking_db
+        ports:
+          - 5432:5432
+        options: >-
+          --health-cmd pg_isready
+          --health-interval 10s
+          --health-timeout 5s
+          --health-retries 5
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: '3.11'
+      - run: pip install dbt-postgres==1.7.4
+      - run: |
+          cd dbt_project
+          DBT_PROFILES_DIR=. BOOKING_DB_HOST=localhost BOOKING_DB_PORT=5432 \
+          dbt compile --profiles-dir .
+
+  dag-check:
+    runs-on: ubuntu-latest
+    needs: lint
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: '3.11'
+      - run: pip install apache-airflow==2.8.1
+      - run: python -c "from dags.booking_pipeline import dag; print(f'DAG loaded: {dag.dag_id}, tasks: {len(dag.tasks)}')"
+
+  docker-build:
+    runs-on: ubuntu-latest
+    needs: [unit-tests, dbt-validate, dag-check]
+    steps:
+      - uses: actions/checkout@v4
+      - run: docker build -t booking-pipeline:test .
+
+  integration-test:
+    runs-on: ubuntu-latest
+    needs: docker-build
+    steps:
+      - uses: actions/checkout@v4
+      - run: |
+          docker compose up -d booking-postgres
+          sleep 15
+          docker compose ps
+          docker compose down
