@@ -81,6 +81,7 @@ ingest_to_bronze → [dbt_run_silver → dbt_run_gold] → dbt_test → log_summ
 6. **NULL and NA strings represent missing data:** Both literal text strings "NULL" and "NA" in the CSV are converted to real SQL NULLs in Silver using NULLIF chains.
 7. **ADR outliers are preserved:** One negative ADR (-€6.38) and 1,959 zero-ADR records are kept as-is. In production, these would be flagged for review with the business team.
 8. **Single-run batch processing:** The pipeline is designed for daily batch execution, not real-time streaming. Scaling to streaming would require architectural changes.
+9. **total_booking_amount is revenue, not count:** `total_booking_amount` represents total revenue (sum of ADR × nights) rather than booking count, as it provides more business value for MoM growth analysis
 
 ---
 
