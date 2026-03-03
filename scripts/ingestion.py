@@ -1,4 +1,5 @@
 """Tests for the Bronze ingestion logic."""
+
 import hashlib
 import csv
 import os

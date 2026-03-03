@@ -4,6 +4,7 @@ Orchestrates: CSV → Bronze → Silver → Gold → Tests → Summary
 """
 
 from datetime import datetime, timedelta
+
 from airflow import DAG
 from airflow.operators.python import PythonOperator
 from airflow.operators.bash import BashOperator
@@ -64,7 +65,6 @@ ingest_to_bronze = PythonOperator(
 
 # === Tasks 2-3: dbt Silver + Gold (grouped) ===
 with TaskGroup("dbt_transformations", dag=dag) as dbt_group:
-
     dbt_run_silver = BashOperator(
         task_id="dbt_run_silver",
         bash_command="bash /opt/airflow/scripts/run_dbt.sh run staging",
@@ -110,6 +110,7 @@ log_summary_task = PythonOperator(
     python_callable=log_summary,
     dag=dag,
 )
+
 
 # === Task Dependencies ===
 ingest_to_bronze >> dbt_group >> dbt_test >> log_summary_task

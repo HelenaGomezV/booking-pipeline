@@ -2,7 +2,9 @@
 
 import csv
 import os
+
 import pytest
+
 
 CSV_PATH = "data/raw/bookings.csv"
 
