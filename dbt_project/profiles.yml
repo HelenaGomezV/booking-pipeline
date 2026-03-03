@@ -1,0 +1,12 @@
+booking_pipeline:
+  target: dev
+  outputs:
+    dev:
+      type: postgres
+      host: "{{ env_var('BOOKING_DB_HOST', 'localhost') }}"
+      port: "{{ env_var('BOOKING_DB_PORT', '5434') | int }}"
+      user: "{{ env_var('BOOKING_DB_USER', 'booking_user') }}"
+      pass: "{{ env_var('BOOKING_DB_PASSWORD', 'booking_pass') }}"
+      dbname: "{{ env_var('BOOKING_DB_NAME', 'booking_db') }}"
+      schema: public
+      threads: 4
