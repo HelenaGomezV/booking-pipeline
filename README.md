@@ -132,8 +132,8 @@ The Medallion Architecture allows migrating layer by layer without disrupting th
 ### 4 From ZIP file
 ```bash
 # 1. Unzip and enter the project
-unzip booking-pipeline.zip
-cd booking-pipeline
+unzip booking-pipeline-main.zip
+cd booking-pipeline-main
 
 # 2. Create environment file
 cp .env.example .env
@@ -143,6 +143,9 @@ docker compose up -d --build
 
 # 4. Verify all containers are running
 docker compose ps
+
+# 4.Verify Results
+docker exec -it booking-pipeline-booking-postgres-1 psql -U booking_user -d booking_db
 ```
 
 ### 5 Open Airflow and run the pipeline
