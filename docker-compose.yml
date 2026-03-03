@@ -1,15 +1,8 @@
 x-airflow-common: &airflow-common
   build: .
+  env_file: .env
   environment: &airflow-common-env
-    AIRFLOW__CORE__EXECUTOR: LocalExecutor
-    AIRFLOW__CORE__LOAD_EXAMPLES: 'false'
-    AIRFLOW__DATABASE__SQL_ALCHEMY_CONN: postgresql+psycopg2://airflow:airflow@airflow-postgres:5432/airflow
-    BOOKING_DB_HOST: booking-postgres
-    BOOKING_DB_PORT: '5432'
-    BOOKING_DB_USER: booking_user
-    BOOKING_DB_PASSWORD: booking_pass
-    BOOKING_DB_NAME: booking_db
-    DBT_PROFILES_DIR: /opt/airflow/dbt_project
+    AIRFLOW__DATABASE__SQL_ALCHEMY_CONN: postgresql+psycopg2://${AIRFLOW_DB_USER}:${AIRFLOW_DB_PASSWORD}@airflow-postgres:5432/${AIRFLOW_DB_NAME}
   depends_on:
     airflow-postgres:
       condition: service_healthy
@@ -20,9 +13,9 @@ services:
   airflow-postgres:
     image: postgres:15
     environment:
-      POSTGRES_USER: airflow
-      POSTGRES_PASSWORD: airflow
-      POSTGRES_DB: airflow
+      POSTGRES_USER: ${AIRFLOW_DB_USER:-airflow}
+      POSTGRES_PASSWORD: ${AIRFLOW_DB_PASSWORD:-airflow}
+      POSTGRES_DB: ${AIRFLOW_DB_NAME:-airflow}
     ports:
       - "5433:5432"
     healthcheck:
@@ -34,9 +27,9 @@ services:
   booking-postgres:
     image: postgres:15
     environment:
-      POSTGRES_USER: booking_user
-      POSTGRES_PASSWORD: booking_pass
-      POSTGRES_DB: booking_db
+      POSTGRES_USER: ${BOOKING_DB_USER:-booking_user}
+      POSTGRES_PASSWORD: ${BOOKING_DB_PASSWORD:-booking_pass}
+      POSTGRES_DB: ${BOOKING_DB_NAME:-booking_db}
     ports:
       - "5434:5432"
     volumes:

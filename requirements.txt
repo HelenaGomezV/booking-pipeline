@@ -1,7 +1,6 @@
-psycopg2-binar
-pandas
-numpy
-dbt-postgres
-pytest
-flake8
-black
+psycopg2-binary==2.9.9
+pandas==2.1.4
+dbt-postgres==1.7.4
+pytest==7.4.4
+flake8==7.0.0
+black==24.1.1

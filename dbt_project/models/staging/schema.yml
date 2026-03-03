@@ -1,0 +1,38 @@
+version: 2
+
+sources:
+  - name: bronze
+    schema: bronze
+    tables:
+      - name: raw_bookings
+        description: "Raw booking data loaded from CSV"
+
+models:
+  - name: stg_bookings
+    description: "Cleaned and typed booking data"
+    columns:
+      - name: _row_hash
+        description: "SHA-256 hash for deduplication"
+        tests:
+          - unique
+          - not_null
+      - name: hotel_type
+        description: "Hotel or Apartment"
+        tests:
+          - not_null
+          - accepted_values:
+              values: ['Hotel', 'Apartment']
+      - name: is_canceled
+        description: "1 = canceled, 0 = not canceled"
+        tests:
+          - not_null
+          - accepted_values:
+              values: [0, 1]
+      - name: adr
+        description: "Average Daily Rate"
+        tests:
+          - not_null
+      - name: arrival_date
+        description: "Reconstructed arrival date"
+        tests:
+          - not_null
