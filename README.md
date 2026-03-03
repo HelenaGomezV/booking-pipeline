@@ -114,7 +114,7 @@ ingest_to_bronze → [dbt_run_silver → dbt_run_gold] → dbt_test → log_summ
 | Orchestration | Docker Airflow | MWAA / Cloud Composer |
 | dbt Models | Full refresh | Incremental + snapshots |
 | Monitoring | Airflow logs | DataDog + PagerDuty + OpenLineage |
-| CI/CD | GitHub Actions | + Terraform (IaC) + multi-environment |
+| CI/CD | GitHub Actions | k8s + Terraform (IaC) + multi-environment |
 | Data Format | CSV (row-based) | Parquet (columnar, compressed) |
 | Scheduling | @daily | Event-driven (S3 trigger) |
 
