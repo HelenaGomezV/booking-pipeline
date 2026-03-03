@@ -1,11 +1,20 @@
-"""Tests for the Bronze ingestion logic."""
+"""
+Bronze Ingestion: CSV → PostgreSQL (raw_bookings)
+Loads raw booking data without transformations.
+"""
 
-import hashlib
 import csv
+import hashlib
+import logging
 import os
+import sys
 
-import pytest
+import psycopg2
+from psycopg2.extras import execute_values
+from datetime import datetime, timezone
 
+logging.basicConfig(level=logging.INFO, format="%(asctime)s - %(levelname)s - %(message)s")
+logger = logging.getLogger(__name__)
 
 EXPECTED_COLUMNS = [
     "hotel",
@@ -42,48 +51,109 @@ EXPECTED_COLUMNS = [
     "reservation_status_date",
 ]
 
+BATCH_SIZE = 5000
+
+
+def get_db_connection():
+    """Connects to PostgreSQL using environment variables."""
+    return psycopg2.connect(
+        host=os.getenv("BOOKING_DB_HOST", "localhost"),
+        port=os.getenv("BOOKING_DB_PORT", "5434"),
+        user=os.getenv("BOOKING_DB_USER", "booking_user"),
+        password=os.getenv("BOOKING_DB_PASSWORD", "booking_pass"),
+        dbname=os.getenv("BOOKING_DB_NAME", "booking_db"),
+    )
+
 
 def compute_row_hash(row):
+    """Creates SHA-256 fingerprint of a row for deduplication."""
     row_string = "|".join(str(row.get(col, "")) for col in EXPECTED_COLUMNS)
     return hashlib.sha256(row_string.encode("utf-8")).hexdigest()
 
 
-class TestRowHash:
-    def test_hash_is_deterministic(self):
-        """Same row always produces same hash."""
-        row = {"hotel": "Hotel", "is_canceled": "0", "adr": "100.50"}
-        assert compute_row_hash(row) == compute_row_hash(row)
-
-    def test_different_rows_different_hash(self):
-        """Different rows produce different hashes."""
-        row1 = {"hotel": "Hotel", "adr": "100"}
-        row2 = {"hotel": "Apartment", "adr": "200"}
-        assert compute_row_hash(row1) != compute_row_hash(row2)
-
-    def test_hash_is_sha256_format(self):
-        """Hash is 64 hex characters (SHA-256)."""
-        row = {"hotel": "Hotel"}
-        h = compute_row_hash(row)
-        assert len(h) == 64
-        assert all(c in "0123456789abcdef" for c in h)
+def validate_schema(csv_columns):
+    """Checks that the CSV has all expected columns."""
+    missing = set(EXPECTED_COLUMNS) - set(csv_columns)
+    if missing:
+        raise ValueError(f"CSV is missing columns: {missing}")
+    extra = set(csv_columns) - set(EXPECTED_COLUMNS)
+    if extra:
+        logger.warning(f"CSV has extra columns (will be ignored): {extra}")
+    logger.info(f"Schema validation passed: {len(EXPECTED_COLUMNS)} expected columns found")
 
 
-class TestSchemaValidation:
-    def test_csv_has_expected_columns(self):
-        """The raw CSV has all 32 expected columns."""
-        csv_path = "data/raw/bookings.csv"
-        if not os.path.exists(csv_path):
-            pytest.skip("CSV file not found")
-        with open(csv_path) as f:
-            reader = csv.DictReader(f)
-            csv_columns = set(reader.fieldnames)
-        missing = set(EXPECTED_COLUMNS) - csv_columns
-        assert len(missing) == 0, f"Missing columns: {missing}"
+def insert_batch(cursor, batch):
+    """Inserts a batch of rows with ON CONFLICT DO NOTHING."""
+    columns = EXPECTED_COLUMNS + ["_loaded_at", "_source_file", "_row_hash"]
+    col_names = ",".join(columns)
 
-    def test_expected_columns_count(self):
-        """We expect exactly 32 columns."""
-        assert len(EXPECTED_COLUMNS) == 32
+    query = f"""
+        INSERT INTO bronze.raw_bookings ({col_names})
+        VALUES %s
+        ON CONFLICT (_row_hash) DO NOTHING
+    """
+    cursor.execute("SAVEPOINT batch_sp")
+    try:
+        execute_values(cursor, query, batch, page_size=len(batch))
+        cursor.execute("RELEASE SAVEPOINT batch_sp")
+        return len(batch), 0
+    except Exception as e:
+        cursor.execute("ROLLBACK TO SAVEPOINT batch_sp")
+        logger.error(f"Batch insert failed: {e}")
+        return 0, len(batch)
 
-    def test_no_duplicate_column_names(self):
-        """Column names are unique."""
-        assert len(EXPECTED_COLUMNS) == len(set(EXPECTED_COLUMNS))
+
+def ingest_csv_to_bronze(csv_path):
+    """Main ingestion: CSV → bronze.raw_bookings"""
+    source_file = os.path.basename(csv_path)
+    logger.info(f"Starting Bronze ingestion from {source_file}")
+
+    conn = get_db_connection()
+    cur = conn.cursor()
+
+    with open(csv_path, "r", encoding="utf-8") as f:
+        reader = csv.DictReader(f)
+        validate_schema(reader.fieldnames)
+
+        batch = []
+        total_inserted = 0
+        total_duplicates = 0
+
+        for row in reader:
+            row_hash = compute_row_hash(row)
+            values = [row.get(col, "") for col in EXPECTED_COLUMNS]
+            values.extend([datetime.now(timezone.utc), source_file, row_hash])
+            batch.append(tuple(values))
+
+            if len(batch) >= BATCH_SIZE:
+                inserted, dupes = insert_batch(cur, batch)
+                total_inserted += inserted
+                total_duplicates += dupes
+                conn.commit()
+                batch = []
+
+        # Insert remaining rows
+        if batch:
+            inserted, dupes = insert_batch(cur, batch)
+            total_inserted += inserted
+            total_duplicates += dupes
+            conn.commit()
+
+    # Post-load verification
+    cur.execute("SELECT COUNT(*) FROM bronze.raw_bookings")
+    row_count = cur.fetchone()[0]
+    logger.info(f"Bronze ingestion complete: {total_inserted} inserted, {total_duplicates} duplicates skipped")
+    logger.info(f"Total rows in bronze.raw_bookings: {row_count}")
+
+    if row_count < 80000:
+        raise ValueError(f"Post-load check failed: only {row_count} rows (expected >= 80,000)")
+
+    cur.close()
+    conn.close()
+    return {"inserted": total_inserted, "duplicates": total_duplicates, "total": row_count}
+
+
+if __name__ == "__main__":
+    csv_path = sys.argv[1] if len(sys.argv) > 1 else "/opt/airflow/data/raw/bookings.csv"
+    result = ingest_csv_to_bronze(csv_path)
+    logger.info(f"Result: {result}")
