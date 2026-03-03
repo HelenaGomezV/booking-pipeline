@@ -174,6 +174,12 @@ booking-pipeline/
 ├── .env.example
 └── README.md
 ```
+## CI pipeline
+![Github Actions](image/CI.png)
+
+## Pipeline DAG
+
+![Airflow DAG](image/dag_pipeline.png)
 
 ## Author
 
