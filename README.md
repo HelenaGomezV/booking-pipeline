@@ -129,7 +129,31 @@ The Medallion Architecture allows migrating layer by layer without disrupting th
 - Docker and Docker Compose installed
 - Git
 
-### 4 commands to full deployment
+### 4 From ZIP file
+```bash
+# 1. Unzip and enter the project
+unzip booking-pipeline.zip
+cd booking-pipeline
+
+# 2. Create environment file
+cp .env.example .env
+
+# 3. Start all services (first run takes 2-5 min)
+docker compose up -d --build
+
+# 4. Verify all containers are running
+docker compose ps
+```
+
+### 5 Open Airflow and run the pipeline
+
+1. Open `http://localhost:8080` (user: `airflow`, password: `airflow`)
+2. Find the DAG **booking_medallion_pipeline**
+3. Toggle the switch to **ON**
+4. Click the **play button** to trigger a manual run
+5. Wait 2-3 minutes — all 5 tasks should turn **green**
+
+### 6 commands to full deployment using github
 
 ```bash
 # 1. Clone the repository
