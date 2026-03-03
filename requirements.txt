@@ -1,4 +1,4 @@
-psycopg2-binary
+psycopg2-binar
 pandas
 numpy
 dbt-postgres
