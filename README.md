@@ -55,9 +55,6 @@ CSV (119K rows)
 7. **ADR outliers are preserved:** One negative ADR (-€6.38) and 1,959 zero-ADR records are kept as-is. In production, these would be flagged for review.
 8. **Single-run batch processing:** The pipeline is designed for daily batch execution, not real-time streaming. Scaling to streaming would require architectural changes.
 
-cd ~/Documents/booking-pipeline
-git archive --format=zip --output=../booking-pipeline.zip HEAD
-
 ## Quick Start
 ```bash
 # 1. Clone the repo
