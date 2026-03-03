@@ -1,0 +1,7 @@
+psycopg2-binary
+pandas
+numpy
+dbt-postgres
+pytest
+flake8
+black
