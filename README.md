@@ -44,6 +44,20 @@ CSV (119K rows)
 | CI/CD         | GitHub Actions (6 stages)     |
 | Infrastructure| Docker Compose                |
 
+## Assumptions
+
+1. **CSV as S3 proxy:** The local CSV simulates a daily extract from S3. In production, the ingestion script would read from S3 using boto3.
+2. **Exact duplicates are errors:** Rows with identical values across all 32 columns (31,994 found) are treated as ingestion duplicates, not intentional records. This would be validated with the business team in production.
+3. **Canceled bookings generate zero revenue:** A canceled reservation did not materialize, so revenue = 0 regardless of ADR. Cancellation data is preserved in Silver for behavioral analysis.
+4. **Zero-night stays are valid edge cases:** 715 bookings with 0 nights (revenue = €0) are kept in Silver. They may represent day-use rooms or data entry errors.
+5. **Country codes may be anonymized:** Codes like SOM, TON, GMB likely represent anonymized European countries in the original dataset (ISO 3166-1 alpha-3).
+6. **NULL and NA strings represent missing data:** Both literal strings are converted to real SQL NULLs in Silver using NULLIF chains.
+7. **ADR outliers are preserved:** One negative ADR (-€6.38) and 1,959 zero-ADR records are kept as-is. In production, these would be flagged for review.
+8. **Single-run batch processing:** The pipeline is designed for daily batch execution, not real-time streaming. Scaling to streaming would require architectural changes.
+
+cd ~/Documents/booking-pipeline
+git archive --format=zip --output=../booking-pipeline.zip HEAD
+
 ## Quick Start
 ```bash
 # 1. Clone the repo
