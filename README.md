@@ -286,4 +286,3 @@ booking-pipeline/
 **Helena Gomez Villegas**
 - Email: helena.villegas90@gmail.com
 - LinkedIn: [linkedin.com/in/yhgomez](https://linkedin.com/in/yhgomez)
-- Phone: +34 605 156 660
