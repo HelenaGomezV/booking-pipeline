@@ -1,0 +1,33 @@
+version: 2
+
+models:
+  - name: popular_countries
+    description: "Country ranking by booking volume (non-canceled only)"
+    columns:
+      - name: country
+        description: "ISO country code"
+        tests:
+          - unique
+          - not_null
+      - name: total_bookings
+        description: "Number of non-canceled bookings"
+        tests:
+          - not_null
+      - name: popularity_rank
+        description: "Rank by booking volume"
+        tests:
+          - not_null
+          
+  - name: mom_growth
+    description: "Month-over-Month revenue growth by hotel type"
+    columns:
+      - name: hotel_type
+        description: "Hotel or Apartment"
+        tests:
+          - not_null
+      - name: year_month
+        description: "YYYY-MM format"
+        tests:
+          - not_null
+      - name: mom_pct_change
+        description: "Percentage change vs previous month"
