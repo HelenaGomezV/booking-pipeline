@@ -311,6 +311,16 @@ booking-pipeline/
 ├── .gitignore
 └── README.md
 ```
+## Interactive Dashboard
+
+A Streamlit dashboard is included to explore the pipeline results interactively.
+```bash
+cd dashboard
+pip install -r requirements.txt
+streamlit run app.py
+```
+
+Features: KPI cards, country rankings, MoM growth charts, Hotel vs Apartment comparison, and a Silver layer data explorer with sidebar filters.
 
 ---
 
