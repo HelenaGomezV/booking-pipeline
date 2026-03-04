@@ -260,7 +260,7 @@ GitHub Actions runs a 6-stage pipeline on every push to `main`:
 | 6. Integration | docker compose up/down | Docker Build |
 ### Example scalable architecture 
 
-![Architecture over cloud AWS](image/dag_datarchitecture.png)
+![Architecture over cloud AWS](image/datarchitecture.png)
 
 ---
 ## CI pipeline
