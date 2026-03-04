@@ -119,6 +119,8 @@ ingest_to_bronze → [dbt_run_silver → dbt_run_gold] → dbt_test → log_summ
 | Data Format | CSV (row-based) | Parquet (columnar, compressed) |
 | Scheduling | @daily | Event-driven (S3 trigger) |
 
+
+
 The Medallion Architecture allows migrating layer by layer without disrupting the existing pipeline. Bronze could move to S3 while Silver and Gold remain in PostgreSQL, then migrate incrementally.
 
 ---
@@ -256,6 +258,9 @@ GitHub Actions runs a 6-stage pipeline on every push to `main`:
 | 4. DAG Check | Airflow DAG import validation | Lint |
 | 5. Docker Build | Image build test | Tests + Validate + DAG |
 | 6. Integration | docker compose up/down | Docker Build |
+### Example scalable architecture 
+
+![Architecture over cloud AWS](image/dag_datarchitecture.png)
 
 ---
 ## CI pipeline
