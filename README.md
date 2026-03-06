@@ -163,8 +163,20 @@ docker exec -it booking-pipeline-booking-postgres-1 psql -U booking_user -d book
 
 ```bash
 # 1. Clone the repository
-git clone https://github.com/yhgomez/booking-pipeline.git
+git clone # 1. Clone the repository
+git clone https://github.com/HelenaGomezV/booking-pipeline.git
 cd booking-pipeline
+
+# 2. Create environment file
+cp .env.example .env
+
+# 3. Start all services
+docker compose up -d --build
+
+# 4. Open Airflow and trigger the DAG
+open http://localhost:8080
+# Login: airflow / airflow
+# Find "booking_medallion_pipeline" -> Toggle ON -> Triggercd booking-pipeline
 
 # 2. Create environment file
 cp .env.example .env
