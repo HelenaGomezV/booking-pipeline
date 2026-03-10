@@ -9,6 +9,7 @@ x-airflow-common: &airflow-common
     BOOKING_DB_PORT: "5432"
     BOOKING_DB_USER: ${BOOKING_DB_USER:-booking_user}
     BOOKING_DB_PASSWORD: ${BOOKING_DB_PASSWORD:-booking_pass}
+    AIRFLOW__WEBSERVER__SECRET_KEY: 'booking_pipeline_secret_key_2024'
     BOOKING_DB_NAME: ${BOOKING_DB_NAME:-booking_db}
     DBT_PROFILES_DIR: /opt/airflow/dbt_project
   depends_on:
