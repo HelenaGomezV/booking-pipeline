@@ -178,16 +178,6 @@ open http://localhost:8080
 # Login: airflow / airflow
 # Find "booking_medallion_pipeline" -> Toggle ON -> Triggercd booking-pipeline
 
-# 2. Create environment file
-cp .env.example .env
-
-# 3. Start all services
-docker compose up -d --build
-
-# 4. Open Airflow and trigger the DAG
-open http://localhost:8080
-# Login: airflow / airflow
-# Find "booking_medallion_pipeline" -> Toggle ON -> Trigger
 ```
 
 All 5 tasks should complete in green within 2-3 minutes.
